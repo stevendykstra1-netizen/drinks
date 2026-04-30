@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Drinks">
+  <meta name="theme-color" content="#0a0a0f">
+  <title>Drinks</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0a0a0f;
+      --surface: #13131a;
+      --surface2: #1c1c26;
+      --border: rgba(255,255,255,0.07);
+      --accent: #c8a96e;
+      --accent-dim: rgba(200,169,110,0.15);
+      --accent-glow: rgba(200,169,110,0.3);
+      --text: #f0ece4;
+      --text-dim: rgba(240,236,228,0.45);
+      --danger: #e07070;
+      --safe: safe-area-inset-bottom;
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Mono', monospace;
+      overflow: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+      height: 100dvh;
+      padding-top: env(safe-area-inset-top);
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+
+    /* Header */
+    .header {
+      padding: 20px 24px 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      flex-shrink: 0;
+    }
+
+    .header-left h1 {
+      font-family: 'DM Serif Display', serif;
+      font-size: 32px;
+      font-weight: 400;
+      color: var(--text);
+      line-height: 1;
+      letter-spacing: -0.5px;
+    }
+
+    .header-left .date {
+      font-size: 11px;
+      color: var(--text-dim);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      margin-top: 4px;
+    }
+
+    .streak-badge {
+      background: var(--accent-dim);
+      border: 1px solid rgba(200,169,110,0.25);
+      border-radius: 20px;
+      padding: 6px 12px;
+      font-size: 11px;
+      color: var(--accent);
+      letter-spacing: 0.06em;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    /* Count display */
+    .count-section {
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 12px 24px 20px;
+    }
+
+    .count-ring-wrap {
+      position: relative;
+      width: 160px;
+      height: 160px;
+    }
+
+    .count-ring-wrap svg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      transform: rotate(-90deg);
+    }
+
+    .ring-bg {
+      fill: none;
+      stroke: var(--surface2);
+      stroke-width: 6;
+    }
+
+    .ring-fill {
+      fill: none;
+      stroke: var(--accent);
+      stroke-width: 6;
+      stroke-linecap: round;
+      transition: stroke-dashoffset 0.5s cubic-bezier(0.34, 1.56, 0.64, 1),
+                  stroke 0.3s ease;
+    }
+
+    .count-inner {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .count-num {
+      font-family: 'DM Serif Display', serif;
+      font-size: 64px;
+      line-height: 1;
+      color: var(--text);
+      transition: transform 0.15s ease, color 0.3s ease;
+    }
+
+    .count-num.bump {
+      animation: bump 0.25s ease;
+    }
+
+    @keyframes bump {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.15); }
+      100% { transform: scale(1); }
+    }
+
+    .count-label {
+      font-size: 10px;
+      color: var(--text-dim);
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      margin-top: 2px;
+    }
+
+    /* Quick add buttons */
+    .quick-add {
+      flex-shrink: 0;
+      padding: 0 24px 16px;
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 10px;
+    }
+
+    .drink-btn {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 14px 8px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s, transform 0.1s;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+    }
+
+    .drink-btn:active {
+      transform: scale(0.94);
+      background: var(--accent-dim);
+      border-color: rgba(200,169,110,0.35);
+    }
+
+    .drink-btn .icon { font-size: 26px; line-height: 1; }
+    .drink-btn .label {
+      font-size: 10px;
+      color: var(--text-dim);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    /* Controls row */
+    .controls {
+      flex-shrink: 0;
+      padding: 0 24px 16px;
+      display: flex;
+      gap: 10px;
+    }
+
+    .ctrl-btn {
+      flex: 1;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px;
+      font-family: 'DM Mono', monospace;
+      font-size: 13px;
+      color: var(--text-dim);
+      cursor: pointer;
+      transition: all 0.15s;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+      letter-spacing: 0.04em;
+    }
+
+    .ctrl-btn:active { transform: scale(0.96); }
+
+    .ctrl-btn.undo:active { color: var(--accent); border-color: rgba(200,169,110,0.3); }
+    .ctrl-btn.reset:active { color: var(--danger); border-color: rgba(224,112,112,0.3); }
+
+    /* History */
+    .history-section {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0 24px;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .history-section::-webkit-scrollbar { display: none; }
+
+    .section-label {
+      font-size: 10px;
+      color: var(--text-dim);
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+      padding-top: 4px;
+    }
+
+    .history-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      padding-bottom: 12px;
+    }
+
+    .history-item {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      animation: slideIn 0.2s ease;
+    }
+
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(-6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .history-item .day {
+      font-size: 12px;
+      color: var(--text-dim);
+      letter-spacing: 0.06em;
+    }
+
+    .history-item .day-count {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .day-bar {
+      height: 4px;
+      border-radius: 2px;
+      background: var(--accent);
+      min-width: 4px;
+      transition: width 0.3s ease;
+      opacity: 0.6;
+    }
+
+    .history-item .day-num {
+      font-family: 'DM Serif Display', serif;
+      font-size: 18px;
+      color: var(--text);
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 24px;
+      color: var(--text-dim);
+      font-size: 12px;
+      letter-spacing: 0.08em;
+    }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      bottom: calc(env(safe-area-inset-bottom) + 80px);
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 10px 20px;
+      font-size: 12px;
+      color: var(--text-dim);
+      letter-spacing: 0.06em;
+      opacity: 0;
+      transition: all 0.25s ease;
+      pointer-events: none;
+      white-space: nowrap;
+      z-index: 100;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    /* Divider */
+    .divider {
+      height: 1px;
+      background: var(--border);
+      margin: 0 24px 16px;
+      flex-shrink: 0;
+    }
+
+    /* Weekly avg */
+    .weekly-avg {
+      flex-shrink: 0;
+      padding: 0 24px 4px;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .stat {
+      text-align: center;
+    }
+
+    .stat-val {
+      font-family: 'DM Serif Display', serif;
+      font-size: 22px;
+      color: var(--text);
+    }
+
+    .stat-lbl {
+      font-size: 9px;
+      color: var(--text-dim);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      margin-top: 2px;
+    }
+
+    /* Over limit indicator */
+    .count-num.over { color: var(--danger); }
+    .ring-fill.over { stroke: var(--danger); }
+
+    /* Install prompt */
+    .install-banner {
+      position: fixed;
+      bottom: 0;
+      left: 0; right: 0;
+      background: var(--surface2);
+      border-top: 1px solid var(--border);
+      padding: 14px 20px calc(env(safe-area-inset-bottom) + 14px);
+      text-align: center;
+      font-size: 11px;
+      color: var(--text-dim);
+      letter-spacing: 0.06em;
+      z-index: 200;
+      animation: slideUp 0.3s ease;
+    }
+
+    @keyframes slideUp {
+      from { transform: translateY(100%); }
+      to { transform: translateY(0); }
+    }
+
+    .install-banner strong { color: var(--accent); }
+
+    .install-close {
+      position: absolute;
+      right: 16px;
+      top: 50%;
+      transform: translateY(-60%);
+      background: none;
+      border: none;
+      color: var(--text-dim);
+      font-size: 18px;
+      cursor: pointer;
+      padding: 4px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <h1>Drinks</h1>
+    <div class="date" id="dateLabel"></div>
+  </div>
+  <div class="streak-badge" id="streakBadge" style="display:none">
+    🔥 <span id="streakCount">0</span> day streak
+  </div>
+</div>
+
+<div class="count-section">
+  <div class="count-ring-wrap">
+    <svg viewBox="0 0 160 160">
+      <circle class="ring-bg" cx="80" cy="80" r="68"/>
+      <circle class="ring-fill" id="ringFill" cx="80" cy="80" r="68"
+        stroke-dasharray="427.26"
+        stroke-dashoffset="427.26"/>
+    </svg>
+    <div class="count-inner">
+      <div class="count-num" id="countNum">0</div>
+      <div class="count-label">today</div>
+    </div>
+  </div>
+</div>
+
+<div class="weekly-avg">
+  <div class="stat">
+    <div class="stat-val" id="weekAvg">—</div>
+    <div class="stat-lbl">7-day avg</div>
+  </div>
+  <div class="stat">
+    <div class="stat-val" id="weekTotal">—</div>
+    <div class="stat-lbl">this week</div>
+  </div>
+  <div class="stat">
+    <div class="stat-val" id="allTimeAvg">—</div>
+    <div class="stat-lbl">all-time avg</div>
+  </div>
+</div>
+
+<div class="quick-add">
+  <button class="drink-btn" onclick="addDrink('Beer')">
+    <span class="icon">🍺</span>
+    <span class="label">Beer</span>
+  </button>
+  <button class="drink-btn" onclick="addDrink('Wine')">
+    <span class="icon">🍷</span>
+    <span class="label">Wine</span>
+  </button>
+  <button class="drink-btn" onclick="addDrink('Spirit')">
+    <span class="icon">🥃</span>
+    <span class="label">Spirit</span>
+  </button>
+  <button class="drink-btn" onclick="addDrink('Cocktail')">
+    <span class="icon">🍸</span>
+    <span class="label">Cocktail</span>
+  </button>
+  <button class="drink-btn" onclick="addDrink('Seltzer')">
+    <span class="icon">🫧</span>
+    <span class="label">Seltzer</span>
+  </button>
+  <button class="drink-btn" onclick="addDrink('Other')">
+    <span class="icon">🥤</span>
+    <span class="label">Other</span>
+  </button>
+</div>
+
+<div class="controls">
+  <button class="ctrl-btn undo" onclick="undoDrink()">← Undo</button>
+  <button class="ctrl-btn reset" onclick="resetDay()">Reset Day</button>
+</div>
+
+<div class="divider"></div>
+
+<div class="history-section">
+  <div class="section-label">Past 7 Days</div>
+  <div class="history-list" id="historyList"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+<div class="install-banner" id="installBanner" style="display:none">
+  Tap <strong>Share</strong> → <strong>Add to Home Screen</strong> to install
+  <button class="install-close" onclick="dismissInstall()">×</button>
+</div>
+
+<script>
+  const DAILY_LIMIT = 3; // rings fill at this count
+  const CIRCUMFERENCE = 2 * Math.PI * 68; // ~427.26
+
+  function todayKey() {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  }
+
+  function getData() {
+    try { return JSON.parse(localStorage.getItem('drinkData') || '{}'); } catch { return {}; }
+  }
+
+  function saveData(data) {
+    localStorage.setItem('drinkData', JSON.stringify(data));
+  }
+
+  function getTodayCount() {
+    const data = getData();
+    const today = data[todayKey()];
+    return today ? today.count : 0;
+  }
+
+  function setTodayCount(n) {
+    const data = getData();
+    const key = todayKey();
+    if (!data[key]) data[key] = { count: 0, log: [] };
+    data[key].count = Math.max(0, n);
+    saveData(data);
+  }
+
+  function addDrink(type) {
+    const data = getData();
+    const key = todayKey();
+    if (!data[key]) data[key] = { count: 0, log: [] };
+    data[key].count++;
+    data[key].log = data[key].log || [];
+    data[key].log.push({ type, time: new Date().toISOString() });
+    saveData(data);
+    render();
+    showToast(`+1 ${type}`);
+  }
+
+  function undoDrink() {
+    const data = getData();
+    const key = todayKey();
+    if (!data[key] || data[key].count === 0) { showToast('Nothing to undo'); return; }
+    data[key].count--;
+    if (data[key].log && data[key].log.length > 0) data[key].log.pop();
+    saveData(data);
+    render();
+    showToast('Undone');
+  }
+
+  function resetDay() {
+    if (!confirm('Reset today to 0?')) return;
+    const data = getData();
+    const key = todayKey();
+    data[key] = { count: 0, log: [] };
+    saveData(data);
+    render();
+    showToast('Day reset');
+  }
+
+  function render() {
+    const count = getTodayCount();
+    const numEl = document.getElementById('countNum');
+    numEl.textContent = count;
+    numEl.classList.toggle('over', count > DAILY_LIMIT);
+
+    // Ring
+    const ring = document.getElementById('ringFill');
+    const pct = Math.min(count / DAILY_LIMIT, 1);
+    ring.style.strokeDashoffset = CIRCUMFERENCE * (1 - pct);
+    ring.classList.toggle('over', count > DAILY_LIMIT);
+
+    // Bump animation
+    numEl.classList.remove('bump');
+    void numEl.offsetWidth;
+    numEl.classList.add('bump');
+
+    // Date
+    const d = new Date();
+    document.getElementById('dateLabel').textContent = d.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' }).toUpperCase();
+
+    // Stats
+    renderStats();
+    renderHistory();
+  }
+
+  function renderStats() {
+    const data = getData();
+    const today = todayKey();
+    const days = Object.keys(data).sort().reverse();
+
+    // 7-day avg (excluding today's partial day if desired — we include it)
+    const last7 = days.slice(0, 7);
+    const weekTotal = last7.reduce((s, k) => s + (data[k].count || 0), 0);
+    const weekAvg = last7.length ? (weekTotal / last7.length).toFixed(1) : '—';
+
+    // This week (Mon-Sun)
+    const d = new Date();
+    const dow = d.getDay();
+    const monday = new Date(d); monday.setDate(d.getDate() - ((dow + 6) % 7));
+    let weekSum = 0;
+    for (let i = 0; i < 7; i++) {
+      const dd = new Date(monday); dd.setDate(monday.getDate() + i);
+      const k = `${dd.getFullYear()}-${String(dd.getMonth()+1).padStart(2,'0')}-${String(dd.getDate()).padStart(2,'0')}`;
+      weekSum += (data[k] ? data[k].count : 0);
+    }
+
+    // All-time
+    const allTotal = days.reduce((s, k) => s + (data[k].count || 0), 0);
+    const allAvg = days.length ? (allTotal / days.length).toFixed(1) : '—';
+
+    document.getElementById('weekAvg').textContent = weekAvg;
+    document.getElementById('weekTotal').textContent = weekSum;
+    document.getElementById('allTimeAvg').textContent = allAvg;
+
+    // Streak — consecutive days with at least 1 drink ending today or yesterday
+    let streak = 0;
+    const allDays = Object.keys(data).sort().reverse();
+    const todayStr = todayKey();
+    const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayStr = `${yesterday.getFullYear()}-${String(yesterday.getMonth()+1).padStart(2,'0')}-${String(yesterday.getDate()).padStart(2,'0')}`;
+
+    let checkDate = new Date();
+    if (!data[todayStr] || data[todayStr].count === 0) checkDate.setDate(checkDate.getDate() - 1);
+
+    for (let i = 0; i < 365; i++) {
+      const k = `${checkDate.getFullYear()}-${String(checkDate.getMonth()+1).padStart(2,'0')}-${String(checkDate.getDate()).padStart(2,'0')}`;
+      if (data[k] && data[k].count > 0) { streak++; checkDate.setDate(checkDate.getDate() - 1); }
+      else break;
+    }
+
+    const badge = document.getElementById('streakBadge');
+    if (streak > 1) {
+      badge.style.display = 'flex';
+      document.getElementById('streakCount').textContent = streak;
+    } else {
+      badge.style.display = 'none';
+    }
+  }
+
+  function renderHistory() {
+    const data = getData();
+    const today = todayKey();
+    const list = document.getElementById('historyList');
+
+    // Past 7 days excluding today
+    const days = [];
+    for (let i = 1; i <= 7; i++) {
+      const d = new Date(); d.setDate(d.getDate() - i);
+      const k = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+      days.push({ key: k, date: d, count: data[k] ? data[k].count : 0 });
+    }
+
+    const max = Math.max(...days.map(d => d.count), 1);
+
+    if (days.every(d => d.count === 0)) {
+      list.innerHTML = '<div class="empty-state">No history yet</div>';
+      return;
+    }
+
+    list.innerHTML = days.map(d => {
+      const label = d.date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+      const barW = Math.max(d.count / max * 80, d.count > 0 ? 8 : 0);
+      return `
+        <div class="history-item">
+          <span class="day">${label.toUpperCase()}</span>
+          <div class="day-count">
+            <div class="day-bar" style="width:${barW}px; opacity:${d.count > 0 ? 0.6 : 0}"></div>
+            <span class="day-num">${d.count}</span>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  let toastTimer;
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove('show'), 1600);
+  }
+
+  // Install banner — show once on iOS
+  function checkInstall() {
+    const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+    const isStandalone = window.navigator.standalone;
+    const dismissed = localStorage.getItem('installDismissed');
+    if (isIOS && !isStandalone && !dismissed) {
+      document.getElementById('installBanner').style.display = 'block';
+    }
+  }
+
+  function dismissInstall() {
+    document.getElementById('installBanner').style.display = 'none';
+    localStorage.setItem('installDismissed', '1');
+  }
+
+  render();
+  checkInstall();
+</script>
+</body>
+</html>
